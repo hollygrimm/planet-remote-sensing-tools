@@ -2,6 +2,41 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import numpy as np
 
+
+def _linear_scale(ndarray, old_min, old_max, new_min, new_max):
+    """ 
+    Linear scale from old_min to new_min, old_max to new_max.
+  
+    Values below min/max are allowed in input and output.
+    Min/Max values are two data points that are used in the linear scaling.
+    https://en.wikipedia.org/wiki/Normalization_(image_processing)
+  
+    Parameters: 
+    ndarray : ndarray 3D array containing data with `double` type.
+  
+    Returns: 
+    ndarray: normalized 3D array containing data with `double` type.
+  
+    """    
+    return (ndarray - old_min)*(new_max - new_min)/(old_max - old_min) + new_min
+
+
+def bands_to_display(bands, alpha=True):
+    """Converts a list of bands to a 3-band rgb, normalized array for display."""
+    rgb_bands = np.dstack(bands[:3])
+
+    old_min = np.percentile(rgb_bands, 2)
+    old_max = np.percentile(rgb_bands, 98)
+    new_min = 0
+    new_max = 1
+    scaled = _linear_scale(rgb_bands.astype(np.double),
+                           old_min, old_max, new_min, new_max)
+    bands = np.clip(scaled, new_min, new_max)
+    if alpha is True:
+        bands = _add_alpha_mask(bands)
+    return bands
+
+
 """
 The NDVI values will range from -1 to 1. You want to use a diverging color scheme to visualize the data,
 and you want to center the colorbar at a defined midpoint. The class below allows you to normalize the colorbar.
@@ -43,8 +78,11 @@ def get_reflectance_coeffs(filename_metadata):
             coeffs[i] = float(value)
     return coeffs
 
-# set midpoint according to how NDVI is interpreted: https://earthobservatory.nasa.gov/Features/MeasuringVegetation/
+
 def show_ndvi_fig(ndvi, filename_ndvi_fig, midpoint=0, figsize=(20, 10)):
+    """
+    set midpoint according to how NDVI is interpreted: https://earthobservatory.nasa.gov/Features/MeasuringVegetation/
+    """
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
 
