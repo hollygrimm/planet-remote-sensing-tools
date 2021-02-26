@@ -1,7 +1,14 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import numpy as np
+import rasterio
 
+def get_bands(filename_img, dict_band_nums):
+    bands = {}
+    with rasterio.open(filename_img) as src:
+        for band_label, band_num in dict_band_nums.items():
+            bands[band_label] = src.read(band_num)
+    return bands, src.meta
 
 def _linear_scale(ndarray, old_min, old_max, new_min, new_max):
     """ 
